@@ -36,7 +36,8 @@ lazy val protobufSettings = PB.protobufSettings ++ Seq(
 
 
 lazy val kafkaWire = (project in file("."))
-    .settings(protobufSettings: _*)
+  .enablePlugins(AutomateHeaderPlugin)
+  .settings(protobufSettings: _*)
     .settings(
       name := "kafka-wire",
       version := "0.1.0",
