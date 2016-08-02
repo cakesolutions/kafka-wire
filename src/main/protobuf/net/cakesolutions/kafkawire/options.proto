@@ -1,0 +1,14 @@
+syntax = "proto2";
+
+package net.cakesolutions.kafkawire;
+
+import "google/protobuf/descriptor.proto";
+
+message TopicOptions {
+    optional string topic = 1;
+}
+
+extend google.protobuf.ServiceOptions {
+    optional TopicOptions commands = 52341;
+    optional TopicOptions events = 52342;
+}
