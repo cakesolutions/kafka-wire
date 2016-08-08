@@ -37,9 +37,8 @@ import scala.util.{Failure, Success}
 
 class KafkaWireClient(sys: ActorSystem, kafkaConf: Config) extends autowire.Client[ServiceMessage, Unpacker, Packer] {
   lazy val responsePool = sys.actorOf(ResponsePool.props(kafkaConf, EVENTS_TOPIC))
-  lazy val bootstrapServers = kafkaConf.getString("bootstrap.servers")
-  lazy val kafkaProducer = KafkaProducer[String, ServiceMessage](
-      Conf(new StringSerializer(), new ServiceMessageKafkaSerializer(), bootstrapServers = bootstrapServers))
+  lazy val kafkaProducer =
+    KafkaProducer[String, ServiceMessage](Conf(kafkaConf, new StringSerializer(), new ServiceMessageKafkaSerializer()))
 
   override def write[Result](r: Result)(implicit packer: Packer[Result]): ServiceMessage = {
     packer.pack(r)
@@ -70,5 +69,11 @@ class KafkaWireClient(sys: ActorSystem, kafkaConf: Config) extends autowire.Clie
       case Failure(e) => e.printStackTrace()
     }
     promise.future
+  }
+
+  override def finalize(): Unit = {
+    super.finalize()
+    kafkaProducer.flush()
+    kafkaProducer.close()
   }
 }

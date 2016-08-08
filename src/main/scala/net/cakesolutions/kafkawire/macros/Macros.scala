@@ -39,8 +39,6 @@ object ProtobufServiceDescriptor {
   }
 }
 
-case class Pipo(a: Int)
-
 object Macros {
   def getReifyDescriptorImpl[T](c: blackbox.Context)(
       implicit wtt: c.WeakTypeTag[T]): c.Expr[ProtobufServiceDescriptor[T]] = {
