@@ -34,32 +34,32 @@ lazy val protobufSettings = PB.protobufSettings ++ Seq(
     com.github.os72.protocjar.Protoc.runProtoc("-v300" +: args.toArray))
 )
 
-
 lazy val kafkaWire = (project in file("."))
   .enablePlugins(AutomateHeaderPlugin)
   .settings(protobufSettings: _*)
-    .settings(
-      name := "kafka-wire",
-      version := "0.1.0",
-      scalaVersion := "2.11.8",
-      scalacOptions ++= sOptions,
-      javacOptions ++= jOptions,
-      headers := Map(
-        "scala" -> MIT("2016", "Cake Solutions Limited"),
-        "conf" -> MIT("2016", "Cake Solutions Limited", "#")
-      ),
-      libraryDependencies ++= Seq(
-        "com.lihaoyi" %% "autowire" % "0.2.5",
-        "net.cakesolutions" %% "scala-kafka-client-akka" % "0.10.0.0-RC1",
-        "net.cakesolutions" %% "scala-kafka-client-testkit" % "0.10.0.0-RC1" % Test,
-        "com.typesafe.akka" %% "akka-testkit" % "2.4.8" % Test,
-        "com.trueaccord.scalapb" %% "scalapb-runtime" % "0.5.32",
-        "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % "0.5.32",
-        "com.google.protobuf" % "protobuf-java" % "3.0.0-beta-3",
-        "ch.qos.logback" % "logback-classic" % "1.1.6"
-      ),
-      scalafmtConfig in ThisBuild := Some(file(".scalafmt"))
-    )
-    .settings(reformatOnCompileSettings)
+  .settings(
+    name := "kafka-wire",
+    version := "0.1.0",
+    scalaVersion := "2.11.8",
+    scalacOptions ++= sOptions,
+    javacOptions ++= jOptions,
+    headers := Map(
+      "scala" -> MIT("2016", "Cake Solutions Limited"),
+      "conf" -> MIT("2016", "Cake Solutions Limited", "#")
+    ),
+    libraryDependencies ++= Seq(
+    "com.lihaoyi" %% "autowire" % "0.2.5",
+      "net.cakesolutions" %% "scala-kafka-client-akka" % "0.10.0.0-RC1",
+      "net.cakesolutions" %% "scala-kafka-client-testkit" % "0.10.0.0-RC1" % Test,
+      "com.typesafe.akka" %% "akka-testkit" % "2.4.8" % Test,
+      "com.trueaccord.scalapb" %% "scalapb-runtime" % "0.5.32",
+      "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % "0.5.32",
+      "com.google.protobuf" % "protobuf-java" % "3.0.0-beta-3",
+      "ch.qos.logback" % "logback-classic" % "1.1.6",
+      "org.scalatest" %% "scalatest" % "3.0.0" % Test
+    ),
+    scalafmtConfig in ThisBuild := Some(file(".scalafmt"))
+  )
+  .settings(reformatOnCompileSettings)
 
 

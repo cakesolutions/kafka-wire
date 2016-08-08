@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package net.cakesolutions.kafkawire;
+
+import "net/cakesolutions/kafkawire/options.proto";
+
+message ProtobufCommand {
+    required string something = 1;
+}
+
+message ProtobufEvent {
+    required string something = 1;
+}
+
+service ProtobufService {
+    option (commands).topic = "commands_test" ;
+    option (events).topic = "events_test";
+
+    rpc kafkaCall (ProtobufCommand) returns (ProtobufEvent);
+}

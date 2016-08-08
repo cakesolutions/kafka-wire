@@ -9,17 +9,3 @@ message ServiceMessage {
   required string typeURL = 2;
   required bytes payload = 3;
 }
-
-message ProtobufCommand {
-  required string something = 1;
-}
-
-message ProtobufEvent {
-  required string something = 1;
-}
-
-service ProtobufService {
-  option (commands).topic = "commands" ;
-  option (events).topic = "events";
-  rpc kafkaCall (ProtobufCommand) returns (ProtobufEvent);
-}
