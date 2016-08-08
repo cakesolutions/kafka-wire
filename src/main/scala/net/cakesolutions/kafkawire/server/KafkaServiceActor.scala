@@ -75,7 +75,7 @@ class KafkaServiceActor(kafkaConf: Config, router: KafkaWireRouter, topic: Strin
       sender ! Confirm(consumerRecords.offsets, commit = true)
   }
 
-  def processRecord(record: (Option[String], ServiceMessage)) =
+  def processRecord(record: (Option[String], ServiceMessage)) = {
     record match {
       case (_, message) =>
         for {
@@ -83,18 +83,17 @@ class KafkaServiceActor(kafkaConf: Config, router: KafkaWireRouter, topic: Strin
           methodPath <- message.headers.get(METHOD_PATH_KEY)
           methodArg <- message.headers.get(METHOD_ARG_KEY)
         } {
-          router.router {
-            autowire.Core.Request(
-                methodPath.split("\\.").toSeq,
-                Map(methodPath -> message.withHeaders(
-                        message.headers - CALL_ID_KEY - METHOD_PATH_KEY - METHOD_ARG_KEY))
-            )
-          }.foreach { event =>
-            val newHeaders = event.headers + (CALL_ID_KEY -> callId)
-            kafkaProducer.send(KafkaProducerRecord(EVENTS_TOPIC, event.withHeaders(newHeaders)))
-          }
+          router.router(
+              autowire.Core.Request(methodPath.split("\\.").toSeq,
+                                    Map(methodArg -> message.withHeaders(
+                                            message.headers - CALL_ID_KEY - METHOD_PATH_KEY - METHOD_ARG_KEY))))
+        }.foreach { event =>
+          val newHeaders = event.headers + (CALL_ID_KEY -> callId)
+          kafkaProducer.send(KafkaProducerRecord(EVENTS_TOPIC, event.withHeaders(newHeaders)))
         }
+
       case _ => // Do nothing
     }
+  }
 
 }

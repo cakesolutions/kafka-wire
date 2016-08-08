@@ -23,6 +23,7 @@ package net.cakesolutions.kafkawire
 
 import java.util
 
+import com.google.protobuf.ByteString
 import com.trueaccord.scalapb.{GeneratedMessage, GeneratedMessageCompanion, Message}
 import net.cakesolutions.kafkawire.protocol.ServiceMessage
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
@@ -35,7 +36,8 @@ object Packer {
   implicit def packer[A <: GeneratedMessage with Message[A]](implicit cmp: GeneratedMessageCompanion[A]): Packer[A] =
     new Packer[A] {
       override def pack(a: A): ServiceMessage = ServiceMessage(
-          typeURL = a.companion.descriptor.getFullName
+          typeURL = a.companion.descriptor.getFullName,
+          payload = ByteString.copyFrom(a.toByteArray)
       )
     }
 }

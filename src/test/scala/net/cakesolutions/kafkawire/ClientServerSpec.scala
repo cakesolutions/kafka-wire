@@ -22,15 +22,12 @@
 package net.cakesolutions.kafkawire
 
 import akka.actor.ActorSystem
-import cakesolutions.kafka.{KafkaConsumer, KafkaProducer, KafkaProducerRecord}
 import cakesolutions.kafka.testkit.KafkaServer
 import com.typesafe.config.ConfigFactory
 import net.cakesolutions.kafkawire.client.KafkaWireClient
 import net.cakesolutions.kafkawire.server.{KafkaServiceActor, KafkaWireRouter}
 import net.cakesolutions.kafkawire.tests.ProtobufServiceGrpc.ProtobufService
 import net.cakesolutions.kafkawire.tests.{ProtobufCommand, ProtobufEvent}
-import org.apache.kafka.clients.producer.RecordMetadata
-import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer, StringSerializer}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
@@ -43,12 +40,12 @@ class ClientServerSpec extends FlatSpecLike with Matchers with BeforeAndAfterAll
   val commandsTopic = COMMAND_TOPIC
   val eventsTopic = EVENTS_TOPIC
 
-  implicit val defaultPatience = PatienceConfig(timeout = Span(20, Seconds), interval = Span(500, Millis))
+  implicit val defaultPatience = PatienceConfig(timeout = Span(10, Seconds), interval = Span(500, Millis))
 
   val config = ConfigFactory.parseString {
     s"""
       |  bootstrap.servers = "localhost:${kafkaServer.kafkaPort}"
-      |  group.id = "test"
+      |  group.id = "group"
       |  enable.auto.commit = false
       |  auto.offset.reset = "earliest"
       |
@@ -65,8 +62,7 @@ class ClientServerSpec extends FlatSpecLike with Matchers with BeforeAndAfterAll
     //SERVER SETUP
     val implementation: ProtobufService = new ProtobufService {
       override def kafkaCall(request: ProtobufCommand): Future[ProtobufEvent] = Future.successful {
-        val res = ProtobufEvent(s"${request.something} : greetings to you")
-        res
+        ProtobufEvent(s"${request.something} : greetings to you")
       }
     }
     val router: KafkaWireRouter = new KafkaWireRouter {
@@ -79,8 +75,8 @@ class ClientServerSpec extends FlatSpecLike with Matchers with BeforeAndAfterAll
   }
 
   override protected def beforeAll() = {
-    kafkaServer.startup()
     super.beforeAll()
+    kafkaServer.startup()
   }
 
   override protected def afterAll() = {
@@ -92,61 +88,17 @@ class ClientServerSpec extends FlatSpecLike with Matchers with BeforeAndAfterAll
 
   "Kafka wire" should "allow typesafe kafka communication with minimum boilerplate" in {
     import autowire._
+
     import scala.concurrent.ExecutionContext.Implicits.global
 
-    import scala.collection.JavaConverters._
-    def keySerializer = new StringSerializer
-    def valueSerializer = new StringSerializer
+    val kafkaWireClient = setup()
+    val result: Future[ProtobufEvent] = kafkaWireClient[ProtobufService].kafkaCall(ProtobufCommand("hello")).call()
 
-    val server = s"localhost:${kafkaServer.kafkaPort}"
-    val producerConf = KafkaProducer.Conf(
-        keySerializer,
-        valueSerializer,
-        bootstrapServers = server,
-        retries = 0,
-        batchSize = 16834,
-        lingerMs = 1,
-        bufferMemory = 33554432
-    )
-    implicit val producer: KafkaProducer[String, String] = KafkaProducer(producerConf)
-
-    def publish(topic: String, message: String): Future[RecordMetadata] =
-      producer.send(KafkaProducerRecord(topic, message))
-
-    def newConsumer[S, T](topic: String, keyDeserializer: Deserializer[S], valueDeserializer: Deserializer[T]) = {
-      val consumer = KafkaConsumer(
-          KafkaConsumer.Conf(
-              ConfigFactory.parseString(s"""
-          {
-           topics = ["$topic"]
-           group.id = "test"
-           auto.offset.reset = "earliest"
-           bootstrap.servers = "$server"
-          }
-          """),
-              keyDeserializer,
-              valueDeserializer
-          ))
-      consumer.subscribe(List(topic).asJava)
-      consumer
+    whenReady(result) { event =>
+      event.something.isEmpty shouldBe false
     }
 
-    val consumer = newConsumer("topic", new StringDeserializer, new StringDeserializer)
-
-    publish("topic", "test-message")
-
-    val records = consumer.poll(30000)
-
-    records.count shouldBe 1
-    records.asScala.head.value shouldBe "test-message"
-
-//    val kafkaWireClient = setup()
-//    val result: Future[ProtobufEvent] = kafkaWireClient[ProtobufService].kafkaCall(ProtobufCommand("hello")).call()
-//
-//    whenReady(result) { event =>
-//      println(event)
-//      println("SUCCESSSSSSSSSSSSSS")
-//    }
+    kafkaWireClient.kafkaProducer.close()
 
   }
 
