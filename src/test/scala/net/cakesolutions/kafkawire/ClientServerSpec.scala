@@ -37,10 +37,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class ClientServerSpec extends FlatSpecLike with Matchers with BeforeAndAfterAll with ScalaFutures {
 
   val kafkaServer: KafkaServer = new KafkaServer
-  val commandsTopic = COMMAND_TOPIC
-  val eventsTopic = EVENTS_TOPIC
 
-  implicit val defaultPatience = PatienceConfig(timeout = Span(10, Seconds), interval = Span(500, Millis))
+  implicit val defaultPatience = PatienceConfig(timeout = Span(15, Seconds), interval = Span(500, Millis))
 
   val config = ConfigFactory.parseString {
     s"""
@@ -68,7 +66,7 @@ class ClientServerSpec extends FlatSpecLike with Matchers with BeforeAndAfterAll
     val router: KafkaWireRouter = new KafkaWireRouter {
       override def router: Router = this.route[ProtobufService](implementation)
     }
-    serverSystem.actorOf(KafkaServiceActor.props(config, router, commandsTopic))
+    serverSystem.actorOf(KafkaServiceActor.props(config, router))
 
     //CLIENT SETUP
     new KafkaWireClient(clientSystem, config)

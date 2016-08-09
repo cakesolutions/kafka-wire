@@ -33,11 +33,11 @@ import net.cakesolutions.kafkawire.protocol.ServiceMessage
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 
 object KafkaServiceActor {
-  def props(conf: Config, router: KafkaWireRouter, topic: String): Props =
-    Props(new KafkaServiceActor(conf, router, topic))
+  def props(conf: Config, router: KafkaWireRouter): Props =
+    Props(new KafkaServiceActor(conf, router))
 }
 
-class KafkaServiceActor(kafkaConf: Config, router: KafkaWireRouter, topic: String) extends Actor with ActorLogging {
+class KafkaServiceActor(kafkaConf: Config, router: KafkaWireRouter) extends Actor with ActorLogging {
 
   import context.dispatcher // implicit execution context
   lazy val kafkaProducer =
@@ -55,7 +55,7 @@ class KafkaServiceActor(kafkaConf: Config, router: KafkaWireRouter, topic: Strin
     */
   override def preStart = {
     super.preStart()
-    consumer ! AutoPartition(List(topic))
+    consumer ! AutoPartition(List(COMMAND_TOPIC))
   }
 
   /**
